@@ -1,0 +1,37 @@
+aeterna-farming/
+├── index.html (Login)
+├── reg.html (Registration)
+├── dash/
+│   ├── index.html (Dashboard - Main)
+│   ├── weather.html (Weather Page)
+│   ├── crops.html (Crop Recommendations)
+│   ├── market.html (Market Prices)
+│   ├── sensors.html (IoT Sensors)
+│   ├── planner.html (Crop Planner)
+│   └── alerts.html (Farm Alerts)
+├── css/
+│   ├── style.css (Main Styles)
+│   ├── dashboard.css
+│   └── components.css
+├── js/
+│   ├── auth.js
+│   ├── app.js (Main App)
+│   ├── weather.js
+│   ├── crops.js
+│   ├── market.js
+│   ├── sensors.js
+│   ├── planner.js
+│   └── alerts.js
+├── php/
+│   ├── config.php
+│   ├── login.php
+│   ├── reg.php
+│   ├── weather.php
+│   ├── market.php
+│   ├── crop-api.php
+│   ├── sensors-api.php
+│   └── alerts-api.php
+└── uploads/
+
+
+alpvantage.market api=MP5VW8FE0TZGEGH1

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 Market Intelligence - Aeterna</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="header-left">
+                <a href="../index.html" class="back-btn">← Back to Dashboard</a>
+                <h1>📈 Market Intelligence</h1>
+                <p>Live commodity prices and market trends</p>
+            </div>
+            <div class="user-profile">
+                <div id="user-display-name">User</div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <!-- Market Controls -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔄 Market Data</h2>
+                    <button onclick="marketApp.refreshData()" class="btn-secondary">🔄 Refresh</button>
+                </div>
+                <div class="market-controls">
+                    <div class="form-group">
+                        <label for="market-region">🌍 Region</label>
+                        <select id="market-region">
+                            <option value="local">Local Market</option>
+                            <option value="regional">Regional</option>
+                            <option value="national">National</option>
+                            <option value="international">International</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="crop-filter">🌱 Crop Filter</label>
+                        <select id="crop-filter">
+                            <option value="all">All Crops</option>
+                            <option value="grains">Grains</option>
+                            <option value="vegetables">Vegetables</option>
+                            <option value="fruits">Fruits</option>
+                            <option value="cash">Cash Crops</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Overview -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>💰 Current Prices</h2>
+                </div>
+                <div id="price-overview">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading market data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Trends -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 Market Trends</h2>
+                </div>
+                <div id="price-trends">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Analyzing market trends...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Recommendations -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>💡 Trading Advice</h2>
+                </div>
+                <div id="trading-advice">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Generating trading recommendations...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="market.js"></script>
+    <script>
+        const marketApp = new MarketApp();
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                document.cookie = "user_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                localStorage.removeItem('user_data');
+                window.location.href = '../index.html';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const userData = getCookie('user_data');
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    document.getElementById('user-display-name').textContent = user.full_name || user.username;
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+            marketApp.loadMarketData();
+        });
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+    </script>
+</body>
+</html>
