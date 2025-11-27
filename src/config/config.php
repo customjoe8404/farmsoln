@@ -7,12 +7,16 @@
 
 
 // API Configuration
+// Prefer environment variables for API keys in production. Set these in your shell
+// (example: `export OPENWEATHER_API_KEY=your_key_here`) or place them here for local testing.
+// API keys (set directly since .env / environment variables are not used)
+// Replace the placeholders below with your real API keys if you have them.
 define('ALPHA_VANTAGE_API_KEY', 'YOUR_ALPHAVANTAGE_API_KEY');
-define('FMP_API_KEY', 'YOUR_FINANCIALMODELINGPREP_API_KEY');
-define('MARKETSTACK_API_KEY', 'YOUR_MARKETSTACK_API_KEY');
+// Weather API (OpenWeatherMap) - leave blank to use Open-Meteo fallback
+define('OPENWEATHER_API_KEY', 'YOUR_OPENWEATHER_API_KEY');
+define('OPENWEATHER_DEFAULT_UNITS', 'metric');
 
 // Application Settings
-define('APP_NAME', 'Aeterna Market Intelligence');
 define('APP_VERSION', '1.0.0');
 define('APP_ENV', 'development'); // 'development' or 'production'
 define('APP_DEBUG', true);
@@ -20,7 +24,6 @@ define('APP_DEBUG', true);
 // Market Data Settings
 define('DEFAULT_REGION', 'local');
 define('CACHE_DURATION', 300); // 5 minutes in seconds
-define('MAX_API_RETRIES', 3);
 define('REQUEST_TIMEOUT', 10);
 
 // Regional Price Multipliers
@@ -101,7 +104,7 @@ $ERROR_MESSAGES = [
 // Logging Configuration
 define('LOG_ENABLED', true);
 define('LOG_FILE', __DIR__ . '/logs/market_intelligence.log');
-define('LOG_LEVEL', 'DEBUG'); // DEBUG, INFO, WARNING, ERROR
+// LOG_LEVEL is not currently used; keep logging enabled via LOG_ENABLED
 
 // CORS Configuration
 $ALLOWED_ORIGINS = [

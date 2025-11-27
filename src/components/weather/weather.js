@@ -33,19 +33,38 @@ class WeatherApp {
       const response = await fetch(
         `${this.apiBaseUrl}?city=${encodeURIComponent(city)}`
       );
-      const data = await response.json();
 
-      if (data.success) {
+      if (!response.ok) {
+        const txt = await response.text();
+        throw new Error(
+          `HTTP ${response.status} - ${txt || response.statusText}`
+        );
+      }
+
+      const text = await response.text();
+      if (!text) throw new Error("Empty response from weather endpoint");
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Invalid JSON from weather endpoint: " + e.message);
+      }
+
+      if (data && data.success) {
         this.currentWeather = data.data;
         this.displayCurrentWeather();
         this.getForecast();
         this.generateFarmingInsights();
       } else {
-        throw new Error(data.error);
+        throw new Error(data?.error || "Unknown weather API error");
       }
     } catch (error) {
       console.error("Weather error:", error);
       this.showNotification("Failed to fetch weather data", "error");
+      const container = document.getElementById("current-weather");
+      if (container)
+        container.innerHTML = `<div class="error-state"><p>Failed to load weather: ${error.message}</p></div>`;
     } finally {
       this.hideLoading("weather-loading");
     }

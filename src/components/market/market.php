@@ -79,7 +79,7 @@ class MarketAPI
 
     public function getCommodityPrices($region = null, $cropType = 'all')
     {
-        authenticate();
+        // Allow public access to price data (demo or live) without authentication
         checkRateLimit('prices_' . ($_SESSION['user_id'] ?? 'anonymous'));
 
         try {
@@ -281,7 +281,7 @@ class MarketAPI
 
     public function getPriceTrends($symbol = 'CORN', $period = '30days')
     {
-        authenticate();
+        // Allow public access to trends
         checkRateLimit('trends_' . ($_SESSION['user_id'] ?? 'anonymous'));
 
         try {

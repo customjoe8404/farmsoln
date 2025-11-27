@@ -96,6 +96,18 @@ class PlannerApp {
       return;
     }
 
+    // More validation
+    if (isNaN(parseFloat(area)) || parseFloat(area) <= 0) {
+      this.showNotification("Area must be a positive number", "warning");
+      return;
+    }
+    // Prevent planting date in the far past
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (plantingDate < todayStr) {
+      this.showNotification("Planting date cannot be in the past", "warning");
+      return;
+    }
+
     const cropInfo = this.cropData[cropType];
     if (!cropInfo) {
       this.showNotification("Invalid crop selection", "error");
@@ -135,22 +147,44 @@ class PlannerApp {
         }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        this.currentPlans.unshift(plan);
-        this.displayPlanSummary(plan);
-        this.displayActivePlans();
-        this.loadUpcomingTasks();
-        this.generateCalendar();
-        this.clearForm();
-        this.showNotification("Crop plan created successfully!", "success");
-      } else {
-        throw new Error(data.error);
+      if (response.status === 401) {
+        this.showNotification("Please login to save plans", "warning");
+        // redirect to login
+        window.location.href = "/src/components/reg/index.html";
+        return;
       }
+
+      const text = await response.text();
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (e) {
+        console.error("Invalid JSON from planner endpoint:", e);
+      }
+
+      if (!data) {
+        // Treat as network/server error — fallback to offline save
+        throw new Error("Invalid server response");
+      }
+
+      if (!data.success) {
+        // Server returned an error — show it to the user and do not silently fallback
+        this.showNotification(data.error || "Failed to save plan", "error");
+        return;
+      }
+
+      // Success — use server returned saved plan if present
+      const savedPlan = data.data || plan;
+      this.currentPlans.unshift(savedPlan);
+      this.displayPlanSummary(savedPlan);
+      this.displayActivePlans();
+      this.loadUpcomingTasks();
+      this.generateCalendar();
+      this.clearForm();
+      this.showNotification("Crop plan created successfully!", "success");
     } catch (error) {
       console.error("Plan creation error:", error);
-      // Use local storage as fallback
+      // Network or server parse error — fallback to local storage
       this.savePlanToLocal(plan);
       this.displayPlanSummary(plan);
       this.displayActivePlans();
@@ -509,15 +543,196 @@ class PlannerApp {
 
   // Placeholder methods for future implementation
   viewPlan(planId) {
-    this.showNotification("Plan details view - to be implemented", "info");
+    const plan = this.currentPlans.find((p) => String(p.id) === String(planId));
+    if (!plan) return this.showNotification("Plan not found", "warning");
+
+    // render detailed plan in the summary area with edit/delete controls
+    const container = document.getElementById("plan-summary");
+    if (!container) return;
+    container.innerHTML = `
+      <div class="plan-detail">
+        <h3>${plan.cropName} — ${plan.variety || "Standard"}</h3>
+        <p><strong>Area:</strong> ${plan.area} acres</p>
+        <p><strong>Planting:</strong> ${this.formatDate(plan.plantingDate)}</p>
+        <p><strong>Harvest:</strong> ${this.formatDate(plan.harvestDate)}</p>
+        <p><strong>Status:</strong> ${plan.status}</p>
+        <p><strong>Notes:</strong> ${plan.notes || ""}</p>
+        <div class="plan-actions">
+          <button class="btn-primary" onclick="plannerApp.completePlan(${
+            plan.id
+          })">Mark Complete</button>
+          <button class="btn-outline" onclick="plannerApp.showEditForm(${
+            plan.id
+          })">Edit</button>
+          <button class="btn-danger" onclick="plannerApp.deletePlan(${
+            plan.id
+          })">Delete</button>
+        </div>
+        <h4>Tasks</h4>
+        <div class="tasks-list">
+          ${plan.tasks
+            .map(
+              (t) => `
+                <div class="task-item ${t.completed ? "completed" : ""}">
+                  <div>${t.name}</div>
+                  <div>Due: ${this.formatDate(t.dueDate)}</div>
+                  <div>
+                    ${
+                      t.completed
+                        ? ""
+                        : `<button onclick="plannerApp.completeTask(${t.id}, ${plan.id})" class="btn-small btn-primary">Complete</button>`
+                    }
+                  </div>
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
   }
 
   completePlan(planId) {
-    this.showNotification("Plan completion - to be implemented", "info");
+    // Call API to mark plan completed
+    fetch(this.apiBaseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "complete_plan", planId }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success)
+          return this.showNotification(
+            data.error || "Failed to complete plan",
+            "error"
+          );
+        // update local plans
+        const idx = this.currentPlans.findIndex(
+          (p) => String(p.id) === String(planId)
+        );
+        if (idx !== -1) this.currentPlans[idx] = data.data;
+        this.displayActivePlans();
+        this.loadUpcomingTasks();
+        this.showNotification("Plan marked complete", "success");
+      })
+      .catch((err) => {
+        console.error(err);
+        this.showNotification("Network error while completing plan", "error");
+      });
   }
 
-  completeTask(taskId) {
-    this.showNotification("Task completion - to be implemented", "info");
+  completeTask(taskId, planId) {
+    fetch(this.apiBaseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "complete_task", planId, taskId }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success)
+          return this.showNotification(
+            data.error || "Failed to complete task",
+            "error"
+          );
+        // update local plan tasks
+        const idx = this.currentPlans.findIndex(
+          (p) => String(p.id) === String(planId)
+        );
+        if (idx !== -1) this.currentPlans[idx] = data.data;
+        this.displayActivePlans();
+        this.loadUpcomingTasks();
+        this.showNotification("Task marked complete", "success");
+      })
+      .catch((err) => {
+        console.error(err);
+        this.showNotification("Network error while completing task", "error");
+      });
+  }
+
+  // show a simple inline edit form for a plan
+  showEditForm(planId) {
+    const plan = this.currentPlans.find((p) => String(p.id) === String(planId));
+    if (!plan) return this.showNotification("Plan not found", "warning");
+    const container = document.getElementById("plan-summary");
+    if (!container) return;
+    container.innerHTML = `
+      <div class="plan-edit">
+        <h3>Edit ${plan.cropName}</h3>
+        <label>Area: <input id="edit-area" type="number" value="${
+          plan.area
+        }" step="0.1" /></label>
+        <label>Notes: <textarea id="edit-notes">${
+          plan.notes || ""
+        }</textarea></label>
+        <div>
+          <button class="btn-primary" onclick="plannerApp.submitEdit(${
+            plan.id
+          })">Save</button>
+          <button class="btn-outline" onclick="plannerApp.viewPlan(${
+            plan.id
+          })">Cancel</button>
+        </div>
+      </div>
+    `;
+  }
+
+  submitEdit(planId) {
+    const area = document.getElementById("edit-area").value;
+    const notes = document.getElementById("edit-notes").value;
+    fetch(this.apiBaseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "edit_plan",
+        plan: { id: planId, area: parseFloat(area), notes },
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success)
+          return this.showNotification(
+            data.error || "Failed to update plan",
+            "error"
+          );
+        const idx = this.currentPlans.findIndex(
+          (p) => String(p.id) === String(planId)
+        );
+        if (idx !== -1) this.currentPlans[idx] = data.data;
+        this.displayActivePlans();
+        this.viewPlan(planId);
+        this.showNotification("Plan updated", "success");
+      })
+      .catch((err) => {
+        console.error(err);
+        this.showNotification("Network error while updating plan", "error");
+      });
+  }
+
+  deletePlan(planId) {
+    if (!confirm("Delete this plan? This cannot be undone.")) return;
+    fetch(this.apiBaseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_plan", id: planId }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success)
+          return this.showNotification(
+            data.error || "Failed to delete plan",
+            "error"
+          );
+        this.currentPlans = this.currentPlans.filter(
+          (p) => String(p.id) !== String(planId)
+        );
+        this.displayActivePlans();
+        document.getElementById("plan-summary").innerHTML = "";
+        this.showNotification("Plan deleted", "success");
+      })
+      .catch((err) => {
+        console.error(err);
+        this.showNotification("Network error while deleting plan", "error");
+      });
   }
 
   showAllPlans() {
