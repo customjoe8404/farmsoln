@@ -323,6 +323,147 @@ class MarketApp {
     }
   }
 
+  // Display loading placeholders while data is being fetched
+  showLoadingStates() {
+    const priceOverview = document.getElementById("price-overview");
+    const priceTrends = document.getElementById("price-trends");
+    const tradingAdvice = document.getElementById("trading-advice");
+
+    if (priceOverview)
+      priceOverview.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading market data...</p>
+            </div>
+        `;
+
+    if (priceTrends)
+      priceTrends.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing market trends...</p>
+            </div>
+        `;
+
+    if (tradingAdvice)
+      tradingAdvice.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Generating trading recommendations...</p>
+            </div>
+        `;
+  }
+
+  // Generic UI error renderer for market page
+  showError(message) {
+    const priceOverview = document.getElementById("price-overview");
+    const priceTrends = document.getElementById("price-trends");
+    const tradingAdvice = document.getElementById("trading-advice");
+
+    const errHtml = `<div class="error-state"><p>${message}</p></div>`;
+    if (priceOverview) priceOverview.innerHTML = errHtml;
+    if (priceTrends) priceTrends.innerHTML = errHtml;
+    if (tradingAdvice) tradingAdvice.innerHTML = errHtml;
+  }
+
+  // Render simple trading advice list
+  renderTradingAdvice(advice) {
+    const container = document.getElementById("trading-advice");
+    if (!container) return;
+    if (!advice || advice.length === 0) {
+      container.innerHTML = `<div class="no-data">No trading advice available</div>`;
+      return;
+    }
+
+    const html = `
+            <div class="advice-list">
+                ${advice
+                  .map(
+                    (a) => `
+                    <div class="advice-item">
+                        <div class="advice-title">${
+                          a.title || a.symbol || "Advice"
+                        }</div>
+                        <div class="advice-body">${
+                          a.text || a.recommendation || "-"
+                        }</div>
+                    </div>
+                `
+                  )
+                  .join("")}
+            </div>
+        `;
+
+    container.innerHTML = html;
+  }
+
+  // Very small fallback chart renderer using canvas 2D if Chart.js is not present
+  renderChart(trends, symbol) {
+    const canvas = document.getElementById("priceTrendChart");
+    const container = document.getElementById("price-trends");
+    if (!container) return;
+    if (!canvas) {
+      container.innerHTML += `<div class="no-data">No chart canvas available</div>`;
+      return;
+    }
+
+    // Normalize trends to array of numbers
+    let values = [];
+    if (!trends) trends = [];
+    if (Array.isArray(trends)) {
+      values = trends
+        .map((t) => {
+          if (typeof t === "number") return t;
+          if (t && typeof t.value !== "undefined") return Number(t.value);
+          if (t && typeof t.close !== "undefined") return Number(t.close);
+          return NaN;
+        })
+        .filter((v) => !Number.isNaN(v));
+    }
+
+    const ctx = canvas.getContext("2d");
+    // clear canvas
+    canvas.width = canvas.clientWidth || 600;
+    canvas.height = 200;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (values.length === 0) {
+      ctx.fillStyle = "#666";
+      ctx.font = "14px sans-serif";
+      ctx.fillText("No trend data available", 10, 30);
+      return;
+    }
+
+    // draw simple line
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const range = max - min || 1;
+    const padding = 20;
+    const w = canvas.width - padding * 2;
+    const h = canvas.height - padding * 2;
+
+    ctx.strokeStyle = "#2b7a78";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    values.forEach((v, i) => {
+      const x = padding + (i / (values.length - 1)) * w;
+      const y = padding + h - ((v - min) / range) * h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // draw symbol label
+    ctx.fillStyle = "#333";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(symbol || "Trend", 10, canvas.height - 6);
+  }
+
+  // Simple wrapper to trigger a manual refresh from UI
+  refreshData() {
+    this.loadMarketData();
+  }
+
   hideTradingAdvice() {
     const container = document.getElementById("trading-advice");
     container.innerHTML = `
