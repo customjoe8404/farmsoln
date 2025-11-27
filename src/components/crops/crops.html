@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🌱 Crop Advisor - Aeterna</title>
+    <link rel="stylesheet" href="/src/assets/css/crops.css" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <div class="header-left">
+          <a href="/index.html" class="back-btn">← Back to Dashboard</a>
+          <h1>🌱 AI Crop Advisor</h1>
+          <p>Smart crop recommendations based on your farm conditions</p>
+        </div>
+        <div class="user-profile">
+          <div id="user-display-name">User</div>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Input Parameters -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🔧 Farm Parameters</h2>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="location">📍 Location</label>
+              <input
+                type="text"
+                id="location"
+                placeholder="Enter your city"
+                value="Nairobi"
+              />
+            </div>
+            <div class="form-group">
+              <label for="soil-type">🌱 Soil Type</label>
+              <select id="soil-type">
+                <option value="loam">Loam</option>
+                <option value="clay">Clay</option>
+                <option value="sandy">Sandy</option>
+                <option value="silt">Silt</option>
+                <option value="clay_loam">Clay Loam</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="farm-size">📏 Farm Size (acres)</label>
+              <input
+                type="number"
+                id="farm-size"
+                value="5"
+                min="1"
+                max="1000"
+              />
+            </div>
+            <div class="form-group">
+              <label for="water-availability">💧 Water Availability</label>
+              <select id="water-availability">
+                <option value="high">High (Good irrigation)</option>
+                <option value="medium">Medium (Seasonal rain)</option>
+                <option value="low">Low (Rain-fed only)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button
+              onclick="cropApp.getRecommendations()"
+              class="btn-primary btn-large"
+            >
+              🤖 Get AI Recommendations
+            </button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🎯 Recommended Crops</h2>
+          </div>
+          <div id="recommendation-results">
+            <div class="empty-state">
+              <div class="empty-icon">🌱</div>
+              <h3>No recommendations yet</h3>
+              <p>
+                Enter your farm parameters and click "Get AI Recommendations" to
+                see personalized crop suggestions.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crop Comparison -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📊 Crop Comparison</h2>
+          </div>
+          <div id="crop-comparison">
+            <div class="empty-state">
+              <div class="empty-icon">📈</div>
+              <p>Generate recommendations to compare crops</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/src/assets/js/utils.js"></script>
+    <script src="/src/assets/js/session.js"></script>
+    <script src="/src/components/crops/crops.js"></script>
+    <script>
+      const cropApp = new CropApp();
+      document.addEventListener("DOMContentLoaded", function () {
+        ensureSession().then(function () {
+          const userData = getCookie("user_data");
+          if (userData) {
+            try {
+              const user = JSON.parse(userData);
+              document.getElementById("user-display-name").textContent =
+                user.full_name || user.username;
+              if (user.location) {
+                document.getElementById("location").value = user.location;
+              }
+            } catch (e) {}
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
