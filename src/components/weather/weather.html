@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🌤️ Live Weather - Aeterna</title>
+    <link rel="stylesheet" href="/src/assets/css/weather.css" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- Header with Back Button -->
+      <div class="dashboard-header">
+        <div class="header-left">
+          <a href="/index.html" class="back-btn">← Back to Dashboard</a>
+          <h1>🌤️ Live Weather Intelligence</h1>
+          <p>Real-time weather data and agricultural insights</p>
+        </div>
+        <div class="user-profile">
+          <div id="user-display-name">User</div>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Weather Search -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📍 Location Weather</h2>
+          </div>
+          <div class="search-container">
+            <input
+              type="text"
+              id="cityInput"
+              placeholder="Enter city name"
+              value="Nairobi"
+            />
+            <button onclick="weatherApp.getWeather()" class="btn-primary">
+              Get Weather
+            </button>
+            <button
+              onclick="weatherApp.getCurrentLocation()"
+              class="btn-secondary"
+            >
+              📍 Use My Location
+            </button>
+          </div>
+        </div>
+
+        <!-- Current Weather -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🌡️ Current Conditions</h2>
+          </div>
+          <div id="current-weather">
+            <div class="loading" id="weather-loading">
+              <div class="spinner"></div>
+              <p>Fetching weather data...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weather Forecast -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📅 5-Day Forecast</h2>
+          </div>
+          <div id="weather-forecast">
+            <div class="loading" id="forecast-loading">
+              <div class="spinner"></div>
+              <p>Loading forecast data...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agricultural Insights -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🌱 Farming Recommendations</h2>
+          </div>
+          <div id="farming-insights">
+            <div class="loading" id="insights-loading">
+              <div class="spinner"></div>
+              <p>Analyzing weather for farming insights...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/src/assets/js/utils.js"></script>
+    <script src="/src/assets/js/session.js"></script>
+    <script src="/src/components/weather/weather.js"></script>
+    <script>
+      const weatherApp = new WeatherApp();
+      document.addEventListener("DOMContentLoaded", function () {
+        ensureSession().then(function () {
+          const userData = getCookie("user_data");
+          if (userData) {
+            try {
+              const user = JSON.parse(userData);
+              document.getElementById("user-display-name").textContent =
+                user.full_name || user.username;
+            } catch (e) {}
+          }
+          weatherApp.getWeather();
+        });
+      });
+    </script>
+  </body>
+</html>
